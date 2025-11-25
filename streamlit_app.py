@@ -9,8 +9,9 @@ st.markdown("**Corporate finance → quant switcher** | HAR + LSTM | 2025")
 def generate_data(n=1000):
     np.random.seed(42)
     returns = np.random.normal(0, 0.01, n)
-    vol = np.abs(returns).rolling(20, min_periods=1).std() * np.sqrt(252 * 390)
-    vol += np.random.normal(0.15, 0.05, n)
+    abs_returns = np.abs(returns)
+    vol = pd.Series(abs_returns).rolling(20, min_periods=1).std() * np.sqrt(252 * 390)
+    vol = vol + np.random.normal(0.15, 0.05, n)
     df = pd.DataFrame({
         'timestamp': pd.date_range("2025-11-20", periods=n, freq='1T'),
         'volatility': vol
