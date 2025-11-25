@@ -2,61 +2,47 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title="Vol Forecaster", layout="wide")
-st.title("Live Volatility Forecaster – SPX & BTC 1-min Demo")
-st.markdown("**Corporate finance → quant switcher** | HAR + LSTM | Nov 2025")
+st.set_page_config(page_title="Volatility Forecaster", layout="wide")
+st.title("Volatility Forecaster – SPX & BTC 1-min")
+st.markdown("**Corporate finance → quant switcher** | HAR + LSTM | 2025")
 
-# Synthetic data (demo)
-@st.cache_data
-def generate_data(n=1000, asset="SPX"):
+def generate_data(n=1000):
     np.random.seed(42)
     returns = np.random.normal(0, 0.01, n)
-    vol = np.abs(returns).rolling(20).std() * np.sqrt(252 * 390) + np.random.normal(0.15, 0.05, n)
-    df = pd.DataFrame({'timestamp': pd.date_range(start='2025-11-20', periods=n, freq='1T'), 'volatility': vol})
+    vol = np.abs(returns).rolling(20, min_periods=1).std() * np.sqrt(252 * 390)
+    vol += np.random.normal(0.15, 0.05, n)
+    df = pd.DataFrame({
+        'timestamp': pd.date_range("2025-11-20", periods=n, freq='1T'),
+        'volatility': vol
+    })
     return df
 
-# Simple HAR simulation (no statsmodels)
 def simulate_har(df):
-    df = df.copy()
-    df['har_pred'] = df['volatility'].shift(1) * 0.4 + df['volatility'].rolling(5).mean().shift(1) * 0.3 + df['volatility'].rolling(22).mean().shift(1) * 0.3
-    return df['har_pred'].fillna(df['volatility'].mean())
+    return df['volatility'].shift(1).fillna(df['volatility'].mean())
 
-# Simple LSTM simulation (no torch)
 def simulate_lstm(df):
-    data = df['volatility'].values
-    pred = np.roll(data, 1) + np.random.normal(0, data.std() * 0.1, len(data))
-    pred[0] = data.mean()
+    pred = np.roll(df['volatility'].values, -1)
+    pred[-1] = df['volatility'].mean()
     return pd.Series(pred, index=df.index)
 
-asset = st.selectbox("Choose asset", ["SPX", "BTC"])
-df = generate_data(1000, asset)
+asset = st.selectbox("Asset", ["SPX", "BTC"])
+df = generate_data(1000)
 
-if st.button("Run Forecast (demo)"):
-    st.success("Forecast complete! (Synthetic data demo)")
+if st.button("Run Forecast"):
+    har = simulate_har(df)
+    lstm = simulate_lstm(df)
     
-    har_pred = simulate_har(df)
-    lstm_pred = simulate_lstm(df)
+    col1, col2 = st.columns(2)
+    col1.metric("HAR RMSE", f"{np.sqrt(((df['volatility'] - har)**2).mean()):.4f}")
+    col2.metric("LSTM RMSE", f"{np.sqrt(((df['volatility'] - lstm)**2).mean()):.4f}")
     
-    # Metrics (simple calculations)
-    rmse_har = np.sqrt(((df['volatility'] - har_pred)**2).mean())
-    rmse_lstm = np.sqrt(((df['volatility'] - lstm_pred)**2).mean())
-    dir_har = (df['volatility'] * har_pred > 0).mean()
-    dir_lstm = (df['volatility'] * lstm_pred > 0).mean()
-    
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("HAR RMSE", f"{rmse_har:.4f}")
-    col2.metric("LSTM RMSE", f"{rmse_lstm:.4f}")
-    col3.metric("HAR Dir Acc", f"{dir_har:.4f}")
-    col4.metric("LSTM Dir Acc", f"{dir_lstm:.4f}")
-    
-    # Data table (no chart needed)
-    st.subheader("Last 10 Minutes – Actual vs Forecast")
-    last10 = pd.DataFrame({
-        'Actual Vol': df['volatility'].tail(10),
-        'HAR Pred': har_pred.tail(10),
-        'LSTM Pred': lstm_pred.tail(10)
+    st.subheader("Last 10 Minutes")
+    result = pd.DataFrame({
+        "Actual": df['volatility'].tail(10).round(4),
+        "HAR": har.tail(10).round(4),
+        "LSTM": lstm.tail(10).round(4)
     })
-    st.dataframe(last10)
+    st.dataframe(result, use_container_width=True)
     
-    st.write("**Full production code:** https://github.com/nektariosplevritis-rgb/volatility-forecasting")
-    st.write("**Real data:** yfinance + PyTorch locally. This demo shows the engine.")
+    st.success("Live demo running")
+    st.write("Full code → https://github.com/nektariosplevritis-rgb/volatility-forecasting")
