@@ -1,4 +1,15 @@
-# volatility-forecasting
-Real-time 1-min SPX & BTC volatility forecasting with HAR + LSTM  
-Live dashboard + backtest → shipping Nov 2025  
-Corporate finance → quant switcher
+# Volatility Forecaster – Real-time SPX & BTC 
+1-min volatility forecasting on S&P 500 and Bitcoin  
+HAR baseline + LSTM model with full backtest
+
+**Live demo** → 
+
+**Features**
+- Real-time 1-min data via yfinance + Binance API
+- HAR (Heteroskedastic Autoregression) baseline
+- Bidirectional LSTM with attention
+- Backtest table: RMSE, MAE, directional accuracy
+- Interactive Plotly dashboard
+
+**Tech stack**  
+Python • PyTorch • pandas • Plotly • Streamlit • scikit-learn
