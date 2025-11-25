@@ -2,7 +2,7 @@
 1-min volatility forecasting on S&P 500 and Bitcoin  
 HAR baseline + LSTM model with full backtest
 
-**Live demo** → 
+**Live demo** → https://appapppy-afh7fstsnwesrmk6dgzvvy.streamlit.app/
 
 **Features**
 - Real-time 1-min data via yfinance + Binance API
